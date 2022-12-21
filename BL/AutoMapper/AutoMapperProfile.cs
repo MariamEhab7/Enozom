@@ -14,6 +14,7 @@ public class AutoMapperProfile : Profile
 		CreateMap<CountryDTO, Country>();
 
 		CreateMap<PopulationDTO, PopulationCount>();
+		CreateMap<PopulationCount, PopulationDTO>();
 
 		CreateMap<Country, DbCountryDTO>();
 

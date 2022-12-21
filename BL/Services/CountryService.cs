@@ -81,7 +81,7 @@ public class CountryService : ICountry
 
     public async Task<DbCountryDTO> GetCountriesWithPopulation(string code)
     {
-        var listOfCountries = await _context.Countries.Where(c=>c.Code == code.ToUpper()).Include(i => i.PopulationCounts).FirstAsync();
+        var listOfCountries = await _context.Countries.Where(c=>c.Code == code).Include(i => i.PopulationCounts).FirstAsync();
         var result = _mapper.Map<DbCountryDTO>(listOfCountries);
         return result;
     }
