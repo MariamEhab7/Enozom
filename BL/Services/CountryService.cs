@@ -11,11 +11,13 @@ using System;
 namespace CountriesPopulation.Services;
 
 public class CountryService : ICountry
-{
+{    
+    public static int page;
+
+    #region Dependancy Injection
     private readonly HttpService _httpService;
     private readonly CountryDBContext _context;
     private readonly IMapper _mapper;
-    public int page = 0;
 
     public CountryService(HttpService httpService, CountryDBContext context, IMapper mapper)
     {
@@ -23,6 +25,7 @@ public class CountryService : ICountry
         _context = context;
         _mapper = mapper;
     }
+    #endregion
     public async Task<GetCountriesDTO> AllCountries()
     {
         var countries = await _httpService.GetHttpRequest();
@@ -36,7 +39,7 @@ public class CountryService : ICountry
             var jsonObject = await AllCountries();
             var countriesList = jsonObject.data;
             var dbList = _mapper.Map<ICollection<Country>>(countriesList);
-            await _context.Countries.AddAsync(dbList.First());
+            await _context.Countries.AddRangeAsync(dbList);
             await _context.SaveChangesAsync();
             return true;
         }
@@ -51,9 +54,13 @@ public class CountryService : ICountry
     {
        try
         {
-            var countriesList = await AllCountries();
-            var dbList = _mapper.Map<Country>(countriesList);
-            _context.Countries.UpdateRange(dbList);
+            var jsonObject = await AllCountries();
+            var countriesList = jsonObject.data;
+            var dbList = _mapper.Map<ICollection<Country>>(countriesList);
+            foreach (var country in dbList)
+            {
+                _context.Countries.Entry(country).State = EntityState.Modified;
+            }
             await _context.SaveChangesAsync();
             return true;
         }
@@ -64,21 +71,25 @@ public class CountryService : ICountry
         }
     }
 
-    public async Task<ListCountriesDTO> GetAllCountries() 
+    public async Task<ICollection<ListCountriesDTO>> GetAllCountries() 
     {
         var listOfCountries = await _context.Countries.OrderBy(n=>n.Name).Skip(page*50).Take(50).ToListAsync();
-        page++;
-
-        var result = _mapper.Map<ListCountriesDTO>(listOfCountries);
+        PageCounter();
+        var result = _mapper.Map<ICollection<ListCountriesDTO>>(listOfCountries);
         return result;
     } 
 
     public async Task<DbCountryDTO> GetCountriesWithPopulation(string code)
     {
-        var listOfCountries = await _context.Countries.Where(c=>c.Code == code).Include(i => i.PopulationCounts).FirstAsync();
+        var listOfCountries = await _context.Countries.Where(c=>c.Code == code.ToUpper()).Include(i => i.PopulationCounts).FirstAsync();
         var result = _mapper.Map<DbCountryDTO>(listOfCountries);
         return result;
     }
 
-
+    #region Helper Method
+    public static void PageCounter()
+    {
+        Interlocked.Increment(ref page);
+    }
+    #endregion
 }

@@ -7,7 +7,7 @@ public interface ICountry
     Task<GetCountriesDTO> AllCountries();
     Task<bool> AddCountries();
     Task<bool> UpdateCountry();
-    Task<ListCountriesDTO> GetAllCountries();
+    Task<ICollection<ListCountriesDTO>> GetAllCountries();
     Task<DbCountryDTO> GetCountriesWithPopulation(string code);
 
 }
